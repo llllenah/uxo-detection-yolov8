@@ -1,106 +1,69 @@
-<p align="center">
-  <img src="assets/banner.png" alt="UXO Detection Banner" width="800"/>
-</p>
+# UXO and Destruction Detection on Satellite Imagery
 
-<h1 align="center">🎯 UXO & Destruction Detection on Satellite Imagery</h1>
+Computer vision pipeline for detecting UXO-like objects, building destruction, and damaged vehicles in satellite and aerial imagery.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.11-blue.svg" alt="Python"/>
-  <img src="https://img.shields.io/badge/YOLOv8-ultralytics-FF6F00.svg" alt="YOLOv8"/>
-  <img src="https://img.shields.io/badge/RT--DETR-transformer-9B59B6.svg" alt="RT-DETR"/>
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"/>
-  <img src="https://img.shields.io/badge/dataset-6049_images-orange.svg" alt="Dataset"/>
-</p>
+## Overview
 
-<p align="center">
-  <b>Computer vision pipeline for detecting unexploded ordnance (UXO), building destruction, and damaged military vehicles on satellite and aerial imagery of Southern Ukraine.</b>
-</p>
+This project explores automated detection workflows for safety-oriented geospatial imagery analysis. It combines dataset preparation, YOLO-format conversion, object-detection training, and evaluation with recall-weighted metrics.
 
----
+Missing a potential UXO is more costly than a false alarm, so the evaluation emphasizes recall, F2-score, and false-negative rate alongside standard object-detection metrics.
 
-## 🔍 Problem Statement
-
-After armed conflicts, **unexploded ordnance (UXO)** poses an extreme threat to civilian safety. Manual mine clearance is slow, dangerous, and expensive. This project explores **automated detection** of UXO, structural destruction, and damaged vehicles using deep learning on satellite and aerial imagery — a potential force multiplier for humanitarian demining operations.
-
-**Key design principle:** Missing a UXO is far more dangerous than a false alarm. Therefore, we optimize for **recall** and use **F2-score** as the primary metric.
-
-## 📊 Results
+## Results
 
 | Model | mAP@0.5 | mAP@0.5:0.95 | Precision | Recall | F2 | Inference (ms) |
 |-------|---------|---------------|-----------|--------|----|----------------|
-| YOLOv8n | 0.083 | 0.041 | 0.213 | 0.094 | 0.106 | **109** |
-| **YOLOv8s** | **0.137** | **0.067** | 0.281 | **0.178** | **0.192** | 245 |
-| RT-DETR | 0.022 | 0.011 | **0.397** | 0.036 | 0.044 | 1314 |
+| YOLOv8n | 0.083 | 0.041 | 0.213 | 0.094 | 0.106 | 109 |
+| YOLOv8s | 0.137 | 0.067 | 0.281 | 0.178 | 0.192 | 245 |
+| RT-DETR | 0.022 | 0.011 | 0.397 | 0.036 | 0.044 | 1314 |
 
-> **YOLOv8s** achieves the best recall–precision balance. RT-DETR shows highest precision but critically low recall — unsuitable for safety-critical applications.
+YOLOv8s produced the best recall-oriented balance in this experiment. RT-DETR had higher precision but low recall, which is less suitable for safety-critical screening.
 
-## 🏗 Architecture
+## Methodology
 
-```
+- Data ingestion from multiple open imagery sources.
+- Pascal VOC to YOLO annotation conversion.
+- Dataset validation and train/validation/test splitting.
+- YOLOv8n, YOLOv8s, and RT-DETR model comparison.
+- Safety-oriented evaluation using F2-score and false-negative rate.
+- Notebook reporting with plots, confusion matrices, and comparison tables.
+
+## Repository Structure
+
+```text
 uxo-detection-yolov8/
 ├── README.md
 ├── requirements.txt
 ├── notebooks/
-│   └── main.ipynb              # Full analytical pipeline
-├── src/
-│   ├── data_loader.py          # ETL: collection, validation, VOC→YOLO conversion
-│   ├── metrics.py              # IoU, P, R, F1, F2, mAP, FNR
-│   ├── train.py                # Training YOLOv8 / RT-DETR + hyperparameter search
-│   └── visualization.py        # Comparison plots, confusion matrices, export
-├── data/
-│   ├── sources/                # Raw Pascal VOC annotations
-│   │   ├── source_1_aerial/    # Sentinel-2 + UNOSAT (destruction)
-│   │   ├── source_2_uav/       # Sentinel-2 + UNOSAT (UXO/craters)
-│   │   └── source_3_terrestrial/ # UC Merced (vehicles, aerial)
-│   └── warehouse/              # YOLO-format dataset (train/val/test)
-└── runs/
-    └── final_comparison/       # Model metrics (CSV + JSON)
+│   ├── main.ipynb
+│   └── colab_train.ipynb
+└── src/
+    ├── data_loader.py
+    ├── metrics.py
+    ├── train.py
+    └── visualization.py
 ```
 
-## 🔬 Methodology
+Large datasets, model weights, and training runs are intentionally excluded from the repository.
 
-1. **ETL Pipeline** — Automated ingestion from 3 independent open data sources, Pascal VOC → YOLO format conversion, data integrity validation
-2. **Data Leakage Prevention** — Location-aware split ensuring no aerial patch appears in both train and val/test
-3. **Model Training** — YOLOv8n, YOLOv8s, RT-DETR with 20 epochs, augmentation, early stopping
-4. **Hyperparameter Search** — Grid search over learning rate, batch size, confidence thresholds
-5. **Safety Metrics** — F2-score (recall-weighted), False Negative Rate (FNR) for mine clearance evaluation
-
-## 🗃 Data Sources
-
-| # | Source | Type | Classes | Images |
-|---|--------|------|---------|--------|
-| 1 | Sentinel-2 + UNOSAT | Satellite (~10 m/px) | destruction, vehicle | ~2,000 |
-| 2 | Sentinel-2 + UNOSAT | Satellite (~10 m/px) | uxo, destruction | ~2,000 |
-| 3 | UC Merced + ESRI | Aerial (~0.3 m/px) | vehicle, destruction | ~2,000 |
-
-**Total:** 6,049 images · 27,078 annotated objects · 70/15/15 train/val/test split
-
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
-# Clone and setup
 git clone https://github.com/llllenah/uxo-detection-yolov8.git
 cd uxo-detection-yolov8
-python3.11 -m venv venv && source venv/bin/activate
+python3.11 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-
-# Run the notebook
 jupyter notebook notebooks/main.ipynb
 ```
 
-**Google Colab (recommended for GPU):**
+GPU training is available through the Colab notebook:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/llllenah/uxo-detection-yolov8/blob/main/notebooks/colab_train.ipynb)
+[Open `colab_train.ipynb` in Google Colab](https://colab.research.google.com/github/llllenah/uxo-detection-yolov8/blob/main/notebooks/colab_train.ipynb)
 
-## 🛠 Tech Stack
+## Tech Stack
 
-`Python` · `YOLOv8 (Ultralytics)` · `RT-DETR` · `PyTorch` · `OpenCV` · `SQLite` · `Pandas` · `Matplotlib` · `Seaborn`
+Python, YOLOv8, RT-DETR, PyTorch, OpenCV, SQLite, Pandas, Matplotlib, Seaborn.
 
-## 📄 License
+## Disclaimer
 
-MIT License — see [LICENSE](LICENSE) for details.
-
-## 👤 Author
-
-**Olena Serhiienko** — [@llllenah](https://github.com/llllenah)  
-Igor Sikorsky Kyiv Polytechnic Institute · Computer Engineering · IP-42
+This is a research and portfolio project. It is not an operational demining system and should not be used for field decisions without expert validation, high-quality data, and formal safety testing.
